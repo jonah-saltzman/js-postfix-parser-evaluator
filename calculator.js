@@ -151,7 +151,7 @@ class Calculator {
 	printRPN() {
 		let str = ''
 		for (const token of this.queue.getQueue()) {
-			str += token.toString()
+			str += token.toString() + ' '
 		}
 		console.log(`RPN: ${str}`)
 	}
@@ -170,6 +170,6 @@ class Calculator {
 
 const calculator = new Calculator()
 
-const string = '(2 + 3 / 6) ^ (3 - 1)'
+const string = '(2 + 36 / (6 ^ (1+1))) ^ (1+ (3 - 1))'
 
 calculator.master(string)

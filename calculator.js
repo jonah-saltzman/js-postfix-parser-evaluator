@@ -1,12 +1,116 @@
 'use strict'
 
-const {Stack, Queue} = require('./classes')
-
 const spaceRegEx = /\ /g
 const digitRegEx = /\d/
 const floatRegEx = /\d+\.\d+|\.\d+|\d+/
-const operatorRE = /[\(\)\+\-\*\/]/
-const opNotLeftParen = /[\)\+\-\*\/]/
+const operatorRE = /[-\(\)\+\*\/\^]/
+const opNotLeftParen = /[-\)\+\*\/\^]/
+const operators = [
+	{
+		symbol: '^',
+		precedence: 4,
+		associativity: false,
+	},
+	{
+		symbol: '*',
+		precedence: 3,
+		associativity: true,
+	},
+	{
+		symbol: '/',
+		precedence: 3,
+		associativity: true,
+	},
+	{
+		symbol: '+',
+		precedence: 2,
+		associativity: true,
+	},
+	{
+		symbol: '-',
+		precedence: 2,
+		associativity: true,
+	},
+]
+
+const operate = {
+	'+': (a, b) => a + b,
+	'-': (a, b) => a - b,
+	'*': (a, b) => a * b,
+	'/': (a, b) => a / b,
+	'^': (a, b) => Math.pow(a, b)
+}
+
+class Stack {
+	constructor() {
+		this.items = []
+	}
+	isEmpty = () => this.items.length === 0
+	push = (operator) => {
+		//console.log(`parsing operator '${operator}'`)
+		if (operator === '(') {
+			this.items.unshift(operator)
+			return true
+		}
+		if (operator === ')') {
+			while (this.peek() !== '(') {
+				if (this.isEmpty()) {
+					console.log('mismatched parentheses!')
+					return false
+				}
+				calculator.queue.enqueue(this.pop())
+			}
+			if (this.peek() === '(') {
+				this.pop()
+				return true
+			} else {
+				console.log('there should have been a left paren here!')
+				return false
+			}
+		}
+		while (this.needToPop(operator)) {
+			// console.log(`need to pop: '${this.peek()}'`)
+			calculator.queue.enqueue(this.pop())
+		}
+		// console.log(`done with all popping; unshift '${operator}'`)
+		this.items.unshift(operator)
+		return true
+	}
+	pop = () => (this.isEmpty() ? false : this.items.shift())
+	peek = () => (this.isEmpty() ? false : this.items[0])
+	print = () => {
+		let str = '['
+		this.items.forEach((item) => (str += item.toString() + ', '))
+		return (str += ']')
+	}
+	getStack = () => this.items
+	needToPop = (operator) => {
+		if (this.isEmpty()) return false
+		const peekObj = operators.find((op) => op.symbol === this.peek())
+		const opObj = operators.find((op) => op.symbol === operator)
+		return (
+			this.peek().match(opNotLeftParen) &&
+			(peekObj.precedence > opObj.precedence ||
+				(peekObj.precedence === opObj.precedence && opObj.associativity))
+		)
+	}
+}
+
+class Queue {
+	constructor() {
+		this.items = []
+	}
+	enqueue = (item) => this.items.push(item)
+	dequeue = () => (this.isEmpty() ? false : this.items.shift())
+	isEmpty = () => this.items.length === 0
+	front = () => (this.isEmpty() ? false : this.items[0])
+	print = () => {
+		let str = '['
+		this.items.forEach((item) => (str += item.toString() + ', '))
+		return (str += ']')
+	}
+	getQueue = () => this.items
+}
 
 class Calculator {
 	constructor() {
@@ -15,17 +119,23 @@ class Calculator {
 		this.string = ''
 	}
 	master(string) {
-		console.log(`parsing: `, string)
+		// console.log(`parsing: `, string)
 		this.string = string.replace(spaceRegEx, '')
-		console.log(`condensed: `, this.string)
+		// console.log(`condensed: `, this.string)
         while (this.string) {
 			const char = this.string[0]
-			console.log(`current char is '${char}'`)
+			// console.log(`current char is '${char}'`)
 			if (char.match(digitRegEx)) {
 				this.getDigits()
+				// console.log(`queue: `, this.queue.getQueue())
+				// console.log(`stack: `, this.stack.getStack())
 			}
 			else if (char.match(operatorRE)) {
+				//console.log(`char '${char}' matched operatorRE`)
 				const noError = this.stack.push(char)
+				// console.log(`queue: `, this.queue.getQueue())
+				// console.log(`stack: `, this.stack.getStack())
+				//console.log(`pushed char '${char}' to the stack with result ${noError}`)
 				if (!noError) {
 					console.log(`there was an error pushing an operator to the stack!`)
 					return false
@@ -40,11 +150,37 @@ class Calculator {
 			}
 			this.queue.enqueue(this.stack.pop())
 		}
+		this.printRPN()
+		this.evaluate()
     }
+
+	evaluate() {
+		const queue = this.queue.getQueue()
+		const operands = []
+		for (let i = 0; i < queue.length; i++) {
+			const [token, type] = [queue[i], typeof queue[i]]
+			if (type === 'number') operands.push(token)
+			else {
+				const [a, b] = [operands.pop(), operands.pop()]
+				operands.push(operate[token](b, a))
+			}
+			console.log(operands)
+		}
+		console.log(`evaluated to: ${operands[0]}`)
+		return operands[0]
+	}
+
+	printRPN() {
+		let str = ''
+		for (const token of this.queue.getQueue()) {
+			str += token.toString()
+		}
+		console.log(`RPN: ${str}`)
+	}
 	getDigits() {
 		const digits = this.string.match(floatRegEx)
 		if (digits) {
-			console.log(`adding digits '${digits}' to queue`)
+			//console.log(`adding digits '${digits}' to queue`)
 			this.string = this.string.slice(digits[0].length)
 			this.queue.enqueue(parseFloat(digits[0]))
 			return parseInt(digits[0])
@@ -57,6 +193,8 @@ class Calculator {
 
 const calculator = new Calculator()
 
-calculator.master('2.2 + 15 * (3 + 142)')
-console.log(calculator.queue.getQueue())
-console.log(calculator.string)
+const string = '(2 + 3 / 6) ^ (3 - 1)'
+
+calculator.master(string)
+//console.log(calculator.queue.getQueue())
+//console.log(calculator.string)

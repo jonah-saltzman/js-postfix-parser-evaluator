@@ -38,6 +38,7 @@ class Stack {
 	}
 	isEmpty = () => this.items.length === 0
 	push = (operator) => {
+        console.log(`parsing '${operator}'`)
         if (operator === '(') {
             this.items.unshift(operator)
             return true
@@ -48,7 +49,7 @@ class Stack {
                     console.log("mismatched parentheses!")
                     return false
                 }
-                calculator.queue.enqueue(this.pop())
+                this.queue.enqueue(this.pop())
             }
             if (this.peek() === '(') {
                 this.pop()

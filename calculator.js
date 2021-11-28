@@ -6,6 +6,7 @@ const spaceRegEx = /\ /g
 const digitRegEx = /\d/
 const floatRegEx = /\d+\.\d+|\.\d+|\d+/
 const operatorRE = /[\(\)\+\-\*\/]/
+const opNotLeftParen = /[\)\+\-\*\/]/
 
 let calculator = {
 	queue: new Queue(),

@@ -47,7 +47,6 @@ class Stack {
 	}
 	isEmpty = () => this.items.length === 0
 	push = (operator) => {
-		//console.log(`parsing operator '${operator}'`)
 		if (operator === '(') {
 			this.items.unshift(operator)
 			return true
@@ -69,20 +68,13 @@ class Stack {
 			}
 		}
 		while (this.needToPop(operator)) {
-			// console.log(`need to pop: '${this.peek()}'`)
 			calculator.queue.enqueue(this.pop())
 		}
-		// console.log(`done with all popping; unshift '${operator}'`)
 		this.items.unshift(operator)
 		return true
 	}
 	pop = () => (this.isEmpty() ? false : this.items.shift())
 	peek = () => (this.isEmpty() ? false : this.items[0])
-	print = () => {
-		let str = '['
-		this.items.forEach((item) => (str += item.toString() + ', '))
-		return (str += ']')
-	}
 	getStack = () => this.items
 	needToPop = (operator) => {
 		if (this.isEmpty()) return false
@@ -101,14 +93,9 @@ class Queue {
 		this.items = []
 	}
 	enqueue = (item) => this.items.push(item)
-	dequeue = () => (this.isEmpty() ? false : this.items.shift())
+	dequeue = () => this.isEmpty() ? false : this.items.shift()
 	isEmpty = () => this.items.length === 0
 	front = () => (this.isEmpty() ? false : this.items[0])
-	print = () => {
-		let str = '['
-		this.items.forEach((item) => (str += item.toString() + ', '))
-		return (str += ']')
-	}
 	getQueue = () => this.items
 }
 
@@ -119,23 +106,14 @@ class Calculator {
 		this.string = ''
 	}
 	master(string) {
-		// console.log(`parsing: `, string)
 		this.string = string.replace(spaceRegEx, '')
-		// console.log(`condensed: `, this.string)
         while (this.string) {
 			const char = this.string[0]
-			// console.log(`current char is '${char}'`)
 			if (char.match(digitRegEx)) {
 				this.getDigits()
-				// console.log(`queue: `, this.queue.getQueue())
-				// console.log(`stack: `, this.stack.getStack())
 			}
 			else if (char.match(operatorRE)) {
-				//console.log(`char '${char}' matched operatorRE`)
 				const noError = this.stack.push(char)
-				// console.log(`queue: `, this.queue.getQueue())
-				// console.log(`stack: `, this.stack.getStack())
-				//console.log(`pushed char '${char}' to the stack with result ${noError}`)
 				if (!noError) {
 					console.log(`there was an error pushing an operator to the stack!`)
 					return false
@@ -151,7 +129,7 @@ class Calculator {
 			this.queue.enqueue(this.stack.pop())
 		}
 		this.printRPN()
-		this.evaluate()
+		return this.evaluate()
     }
 
 	evaluate() {
@@ -180,7 +158,6 @@ class Calculator {
 	getDigits() {
 		const digits = this.string.match(floatRegEx)
 		if (digits) {
-			//console.log(`adding digits '${digits}' to queue`)
 			this.string = this.string.slice(digits[0].length)
 			this.queue.enqueue(parseFloat(digits[0]))
 			return parseInt(digits[0])
@@ -196,5 +173,3 @@ const calculator = new Calculator()
 const string = '(2 + 3 / 6) ^ (3 - 1)'
 
 calculator.master(string)
-//console.log(calculator.queue.getQueue())
-//console.log(calculator.string)
